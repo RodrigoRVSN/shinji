@@ -50,6 +50,12 @@ async fn serenity(
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
+    let user_id = secret_store
+        .get("USER_ID")
+        .expect("Expected a token in the environment");
+
+    env::set_var("USER_ID", user_id);
+
     let client = Client::builder(&token, intents)
         .event_handler(Handler)
         .await
