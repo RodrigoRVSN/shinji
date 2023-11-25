@@ -6,6 +6,7 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
 use serenity::prelude::*;
+use shuttle_secrets::SecretStore;
 
 struct Handler;
 
@@ -36,20 +37,23 @@ impl EventHandler for Handler {
     }
 }
 
-#[tokio::main]
-async fn main() {
+#[shuttle_runtime::main]
+async fn serenity(
+    #[shuttle_secrets::Secrets] secret_store: SecretStore,
+) -> shuttle_serenity::ShuttleSerenity {
     dotenv().ok();
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+
+    let token = secret_store
+        .get("DISCORD_TOKEN")
+        .expect("Expected a token in the environment");
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
-    let mut client = Client::builder(&token, intents)
+    let client = Client::builder(&token, intents)
         .event_handler(Handler)
         .await
         .expect("Err creating client");
 
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
-    }
+    Ok(client.into())
 }
